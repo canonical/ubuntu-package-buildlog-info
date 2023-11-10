@@ -43,17 +43,17 @@ def _get_published_sources(archive, version, source_package_name, lp_series, poc
     return sources
 
 
-def get_buildlog_info(package_series, package_name, package_version, package_architecture="amd64", ppas=[], lp_user=None):
+def get_buildlog_info(
+    package_series, package_name, package_version, package_architecture="amd64", ppas=[], lp_user=None
+):
     if lp_user:
-        launchpad = Launchpad.login_with(
-            lp_user,
-            service_root=service_roots['production'], version='devel')
+        launchpad = Launchpad.login_with(lp_user, service_root=service_roots["production"], version="devel")
     else:
         # Log in to launchpad annonymously - we use launchpad to find
         # the package publish time
         launchpad = Launchpad.login_anonymously(
-            'ubuntu-package-buildlog-info',
-            service_root=service_roots['production'], version='devel')
+            "ubuntu-package-buildlog-info", service_root=service_roots["production"], version="devel"
+        )
 
     ubuntu = launchpad.distributions["ubuntu"]
     source_package_found = False
@@ -73,52 +73,55 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
         lp_arch_series = lp_series.getDistroArchSeries(archtag=package_architecture)
 
         for package_publication_status in ["Published", "Superseded"]:
-            sources = _get_published_sources(archive,
-                                             package_version,
-                                             package_name,
-                                             lp_series,
-                                             pocket,
-                                             status=package_publication_status)
+            sources = _get_published_sources(
+                archive, package_version, package_name, lp_series, pocket, status=package_publication_status
+            )
             if len(sources) == 0:
-                print(f'INFO: No {package_publication_status} sources found for {package_name} version {package_version} in {package_series} {pocket}')
-                print('INFO: \tTrying to find a binary package with that name ...')
+                print(
+                    f"INFO: No {package_publication_status} sources found for {package_name} version {package_version} in {package_series} {pocket}"
+                )
+                print("INFO: \tTrying to find a binary package with that name ...")
                 # unable to find published sources for args.package.
                 # Perhaps this is a binary package name so we can
                 # do a lookup to see if there exists a source package for
                 # args.package binary package.
-                binaries = _get_binary_packages(archive,
-                                                package_version,
-                                                package_name,
-                                                lp_arch_series,
-                                                pocket,
-                                                status=package_publication_status)
+                binaries = _get_binary_packages(
+                    archive, package_version, package_name, lp_arch_series, pocket, status=package_publication_status
+                )
                 if len(binaries):
                     # there were published binaries with this name.
                     # now get the source package name so we can get the changelog
                     for binary in binaries:
                         source_package_name = binary.source_package_name
-                        sources = _get_published_sources(archive,
-                                                         package_version,
-                                                         source_package_name,
-                                                         lp_series,
-                                                         pocket,
-                                                         status=package_publication_status)
+                        sources = _get_published_sources(
+                            archive,
+                            package_version,
+                            source_package_name,
+                            lp_series,
+                            pocket,
+                            status=package_publication_status,
+                        )
                         if len(sources) > 0:
-                            print(f'INFO: \tFound source package {source_package_name} for binary package '
-                                  f'{package_name} version {package_version} with {package_publication_status} sources.')
+                            print(
+                                f"INFO: \tFound source package {source_package_name} for binary package "
+                                f"{package_name} version {package_version} with {package_publication_status} sources."
+                            )
                             source_package_found = True
                             break
                 else:
-                    print(f'INFO: \tNo {package_publication_status} binaries found for {package_name} version {package_version} in {package_series} {pocket}\n\n')
+                    print(
+                        f"INFO: \tNo {package_publication_status} binaries found for {package_name} version {package_version} in {package_series} {pocket}\n\n"
+                    )
             else:
-                print(f'INFO: \tFound source package '
-                      f'{package_name} version {package_version} in {pocket} pocket with {package_publication_status} sources.')
+                print(
+                    f"INFO: \tFound source package "
+                    f"{package_name} version {package_version} in {pocket} pocket with {package_publication_status} sources."
+                )
                 source_package_found = True
                 break
         if source_package_found:
             break
     if len(sources) == 1:
-
 
         builds = sources[0].getBuilds()
         if len(builds) > 1:
@@ -131,31 +134,40 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
                     source_package_arch_tag = _build.arch_tag
 
                     changelog_url = sources[0].changelogUrl()
-                    url = launchpad._root_uri.append(urllib.parse.urlparse(changelog_url).path.lstrip('/'))
-                    changelog_resp = launchpad._browser.get(url).decode('utf-8')
+                    url = launchpad._root_uri.append(urllib.parse.urlparse(changelog_url).path.lstrip("/"))
+                    changelog_resp = launchpad._browser.get(url).decode("utf-8")
                     # write changelog_resp to file named {package_name}.changelog
-                    with open(f'{source_package_name}_{source_package_version}_{source_package_arch_tag}.changelog', 'w') as f:
+                    with open(
+                        f"{source_package_name}_{source_package_version}_{source_package_arch_tag}.changelog", "w"
+                    ) as f:
                         f.write(changelog_resp)
 
                     buildlog_url = _build.build_log_url
-                    url = launchpad._root_uri.append(urllib.parse.urlparse(buildlog_url).path.lstrip('/'))
-                    buildlog_resp = launchpad._browser.get(url).decode('utf-8')
+                    url = launchpad._root_uri.append(urllib.parse.urlparse(buildlog_url).path.lstrip("/"))
+                    buildlog_resp = launchpad._browser.get(url).decode("utf-8")
 
                     # Find line with <<PKGBUILDDIR>> in buildlog_resp and set as pkg_builddir variable
                     pkg_builddir = ""
                     for buildlog_line in buildlog_resp.splitlines():
-                        if "I: NOTICE: Log filtering will replace" in buildlog_line and "with '<<PKGBUILDDIR>>'" in buildlog_line:
+                        if (
+                            "I: NOTICE: Log filtering will replace" in buildlog_line
+                            and "with '<<PKGBUILDDIR>>'" in buildlog_line
+                        ):
                             # use regex to extract a directory path from the line eg 'build/apparmor-BXxSs1/apparmor-3.0.4'
                             pkg_builddir_regex = re.compile(r"'build/.*' ")
                             pkg_builddir = pkg_builddir_regex.search(buildlog_line).group(0).replace("'", "")
                             break
 
-                    with open(f'{source_package_name}_{source_package_version}_{source_package_arch_tag}.buildlog', 'w') as f:
+                    with open(
+                        f"{source_package_name}_{source_package_version}_{source_package_arch_tag}.buildlog", "w"
+                    ) as f:
                         f.write(buildlog_resp)
 
                     buildinfo_start = "| Buildinfo                                                                    |"
                     buildinfo_end = "| Package contents                                                             |"
-                    buildlog_header_separator = "+------------------------------------------------------------------------------+"
+                    buildlog_header_separator = (
+                        "+------------------------------------------------------------------------------+"
+                    )
                     buildinfo = ""
                     append_to_buildinfo = False
                     for buildlog_line in buildlog_resp.splitlines():
@@ -164,7 +176,13 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
 
                         if buildinfo_end in buildlog_line:
                             break
-                        if append_to_buildinfo and buildlog_line != buildinfo_start and buildlog_line != buildinfo_end and buildlog_line != buildlog_header_separator and buildlog_line != "":
+                        if (
+                            append_to_buildinfo
+                            and buildlog_line != buildinfo_start
+                            and buildlog_line != buildinfo_end
+                            and buildlog_line != buildlog_header_separator
+                            and buildlog_line != ""
+                        ):
                             buildinfo = "{}{}\n".format(buildinfo, buildlog_line)
 
                     # trim all whitepace from pkg_builddir
@@ -172,13 +190,15 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
                     # replace <<PKGBUILDDIR>> in buildinfo with the actual path
                     buildinfo = buildinfo.replace("<<PKGBUILDDIR>>", pkg_builddir)
 
-                    buildinfo_filename = f'{source_package_name}_{source_package_version}_{source_package_arch_tag}.buildinfo'
-                    with open(buildinfo_filename, 'w') as f:
+                    buildinfo_filename = (
+                        f"{source_package_name}_{source_package_version}_{source_package_arch_tag}.buildinfo"
+                    )
+                    with open(buildinfo_filename, "w") as f:
                         f.write(buildinfo)
 
                     changesfile_url = _build.changesfile_url
-                    url = launchpad._root_uri.append(urllib.parse.urlparse(changesfile_url).path.lstrip('/'))
-                    changesfile_resp = launchpad._browser.get(url).decode('utf-8')
+                    url = launchpad._root_uri.append(urllib.parse.urlparse(changesfile_url).path.lstrip("/"))
+                    changesfile_resp = launchpad._browser.get(url).decode("utf-8")
 
                     # find the hashes of buildinfo_filename in the changesfile_resp and verify that they match hash
                     # of the buildinfo_filename file already written to disk
@@ -190,21 +210,23 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
                             # get the hash from the changesfile_line
                             changesfile_buildinfo_hash = changesfile_line.split()[0]
                             # get the hash of the buildinfo_filename file
-                            sha256hash = hashlib.sha256(buildinfo.encode('UTF-8')).hexdigest()
+                            sha256hash = hashlib.sha256(buildinfo.encode("UTF-8")).hexdigest()
 
                             if changesfile_buildinfo_hash == sha256hash:
-                                print(f'INFO: \tHash of {buildinfo_filename} matches hash in changes file.')
+                                print(f"INFO: \tHash of {buildinfo_filename} matches hash in changes file.")
                             else:
-                                print(f'INFO: \tHash of {buildinfo_filename} does not match hash in changes file.')
+                                print(f"INFO: \tHash of {buildinfo_filename} does not match hash in changes file.")
                             break
 
-                    with open(f'{source_package_name}_{source_package_version}_{source_package_arch_tag}.changes', 'w') as f:
+                    with open(
+                        f"{source_package_name}_{source_package_version}_{source_package_arch_tag}.changes", "w"
+                    ) as f:
                         f.write(changesfile_resp)
 
         else:
-            print(f'Unable to find builds for package {package_name} version {package_version}')
+            print(f"Unable to find builds for package {package_name} version {package_version}")
     else:
-        print(f'Unable to find published package {package_name} version {package_version}')
+        print(f"Unable to find published package {package_name} version {package_version}")
 
 
 @click.command()
@@ -229,7 +251,7 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
     required=False,
     default="ERROR",
     help="How detailed would you like the output.",
-    show_default=True
+    show_default=True,
 )
 @click.option(
     "--package-architecture",
@@ -242,7 +264,7 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
     "the source package. The default is amd64. ",
     required=True,
     default="amd64",
-    show_default=True
+    show_default=True,
 )
 @click.option(
     "--ppa",
@@ -254,7 +276,7 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
     "Expected format is "
     "ppa:'%LAUNCHPAD_USERNAME%/%PPA_NAME%' eg. ppa:philroche/cloud-init"
     "Multiple --ppa options can be specified",
-    default=[]
+    default=[],
 )
 @click.option(
     "--launchpad-user",
@@ -262,8 +284,8 @@ def get_buildlog_info(package_series, package_name, package_version, package_arc
     required=False,
     type=click.STRING,
     help="Launchpad username to use when querying PPAs. This is important id "
-         "you are querying PPAs that are not public.",
-    default=None
+    "you are querying PPAs that are not public.",
+    default=None,
 )
 @click.pass_context
 def ubuntu_package_buildlog_info(
@@ -278,9 +300,7 @@ def ubuntu_package_buildlog_info(
     # We log to stderr so that a shell calling this will not have logging
     # output in the $() capture.
     level = logging.getLevelName(logging_level)
-    logging.basicConfig(
-        level=level, stream=sys.stderr, format="%(asctime)s [%(levelname)s] %(message)s"
-    )
+    logging.basicConfig(level=level, stream=sys.stderr, format="%(asctime)s [%(levelname)s] %(message)s")
 
     get_buildlog_info(series, package_name, package_version, package_architecture, list(ppas), lp_user)
 
