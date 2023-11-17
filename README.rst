@@ -18,6 +18,12 @@ Ubuntu Package Buildlog Info
 
 Tool to retrieve Ubuntu package buildlog info
 
+Ubuntu package builds currently do not publish a buildinfo file. However, the buildlog file contains
+the contents buildinfo file. This script downloads the buildlog file, extracts the buildinfo file and verifies
+that the buildinfo file is correct based on the checksum in the .changes file.
+
+See https://wiki.debian.org/ReproducibleBuilds/BuildinfoFiles for more information on buildinfo files.
+
 
 * Free software: GNU General Public License v3
 * Documentation: https://ubuntu-package-buildlog-info.readthedocs.io.
@@ -43,7 +49,7 @@ TODO
 
 * Code cleanup now that we have a working version
 * Write tests
-* Add support for querying PPAs
+* Complete support for querying PPAs
 * Add support for querying latest version of a package in a series if no version is specified
 * Create snapcraft.yaml to build a snap package for easy distribution
 
