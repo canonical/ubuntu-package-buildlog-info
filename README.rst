@@ -24,6 +24,8 @@ that the buildinfo file is correct based on the checksum in the .changes file.
 
 See https://wiki.debian.org/ReproducibleBuilds/BuildinfoFiles for more information on buildinfo files.
 
+Launchpad.net bug https://bugs.launchpad.net/launchpad/+bug/2044140 is to track the progress of publishing buildinfo
+files.
 
 * Free software: GNU General Public License v3
 * Documentation: https://ubuntu-package-buildlog-info.readthedocs.io.
