@@ -13,7 +13,9 @@ Ubuntu Package Buildlog Info
         :target: https://ubuntu-package-buildlog-info.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
-
+With https://bugs.launchpad.net/launchpad/+bug/1686242 for API access to package buildinfo files directly
+I am archiving this repo. it is replaced with https://github.com/canonical/ubuntu-package-buildinfo which uses
+the API directly.
 
 
 Tool to retrieve Ubuntu package buildlog info
